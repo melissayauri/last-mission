@@ -53,7 +53,8 @@ const app = http.createServer(async (req,res)=>{
       res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
       return fs.createReadStream(path.join(__dirname,'index.html')).pipe(res);
     }
-    if (url.pathname==='/health') return json(res,200,{status:'ok',app:'last-mission',version:'0.4.0'});
+    if(url.pathname==='/qr'){const svg=await require('qrcode').toString('https://last-mission-nexus.onrender.com/?role=student',{type:'svg',margin:2,width:300});res.writeHead(200,{'Content-Type':'image/svg+xml','X-Content-Type-Options':'nosniff'});return res.end(svg);}
+    if (url.pathname==='/health') return json(res,200,{status:'ok',app:'last-mission',version:'0.5.0'});
     if (url.pathname!=='/api') return json(res,404,{error:'Ruta no encontrada'});
     let body={};
     if(req.method==='POST') {
