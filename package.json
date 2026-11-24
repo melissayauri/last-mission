@@ -1,1 +1,14 @@
-{"name":"last-mission","version":"0.1.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=20"}}
+{
+  "name": "last-mission",
+  "version": "0.5.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
