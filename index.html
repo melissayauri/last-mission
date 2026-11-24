@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080e19"><title>LAST MISSION · NEXUS</title>
+<style>
+:root{color-scheme:dark;--bg:#080e19;--panel:#101b2b;--border:#32465c;--cyan:#67e8f9;--muted:#94a3b8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#102b40 0,#080e19 60%);color:#e2e8f0;font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}main{max-width:820px;margin:auto;padding:24px 18px 50px}
+h1{margin:6px 0;letter-spacing:.12em;color:#fff;font-size:clamp(28px,6vw,48px)}h2{font-size:clamp(20px,4vw,28px);line-height:1.25}h3{color:var(--cyan)}.eyebrow{color:var(--cyan);font-size:12px;letter-spacing:2px}.muted{color:var(--muted)}
+section{background:rgba(16,27,43,.96);border:1px solid var(--border);border-radius:17px;padding:clamp(15px,4vw,26px);margin:17px 0;box-shadow:0 20px 75px #0004}
+button,input,select{font:inherit;padding:12px;border-radius:8px;border:1px solid #475569;background:#172438;color:#fff}input,select{max-width:100%;width:100%;margin:7px 0 15px}button{cursor:pointer;background:#14536b;border-color:#23677d;font-weight:600;transition:.15s}button:hover:not(:disabled){background:#1a6c86}button:disabled{opacity:.42;cursor:default}
+label{display:block;margin:12px 0}.radio{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:9px}.radio input{width:auto;margin:0}
+button.ghost{background:#172438}nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}nav button{font-size:13px}.orb{margin:24px auto;width:142px;height:142px;border:2px solid var(--cyan);border-radius:50%;display:grid;place-items:center;box-shadow:0 0 35px #0891b280,inset 0 0 30px #0891b255;color:#a5f3fc;letter-spacing:3px;font-weight:800;animation:pulse 3s ease-in-out infinite}@keyframes pulse{50%{box-shadow:0 0 65px #0891b2a0,inset 0 0 30px #0891b277}}
+.error{color:#fca5a5;min-height:24px}.banner{border:1px solid #155e75;border-radius:9px;background:#12384c;padding:10px 14px;color:#a5f3fc}.actions{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0}.pill{display:inline-block;color:#67e8f9;border:1px solid #23677d;border-radius:99px;padding:4px 10px;font-size:12px;letter-spacing:1px}.row{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #253344;padding:10px 0}.row:last-child{border-bottom:0}.permit{padding:8px 0;border-bottom:1px solid #253344}.permit select{margin:5px 0}.status{color:#fcd34d;letter-spacing:1px}.footer{margin-top:30px;text-align:center;color:var(--muted);font-size:12px}.cinema main{max-width:1100px;text-align:center}.cinema .orb{width:225px;height:225px;font-size:22px}.cinema h2{font-size:clamp(24px,5vw,50px)}.cinema nav{display:none}.cinema section{min-height:64vh;display:flex;flex-direction:column;align-items:center;justify-content:center}.cinema .row{width:100%;max-width:650px}
+</style></head>
+<body><main><div class="eyebrow">UPC · SEGURIDAD DE INTEGRACIÓN DE APLICACIONES</div><h1>LAST MISSION</h1><div class="eyebrow">THE HUMAN FACTOR · NEXUS SYSTEM · CAPÍTULO 01</div><nav>
+<button onclick="location.search='?role=student'">Estudiantes</button>
+<button onclick="location.search='?role=teacher'">Mission Control</button>
+<button onclick="location.search='?role=cinema'">Cinema Mode</button></nav>
+<div id="app"></div><div id="error" class="error" role="alert"></div><div class="footer">PROYECTO NEXUS · DEMOSTRACIÓN ACADÉMICA</div>
+</main>
+<script>
+const role=new URLSearchParams(location.search).get('role')||'student';
+if(role==='cinema')document.body.classList.add('cinema');
+const app=document.getElementById('app'),error=document.getElementById('error');
+const teams=['Aegis','Cipher','Sentinel','Phantom','Titan','Phoenix'];
+const options=['Permitir dentro del alcance','Permitir con controles adicionales','Denegar'];
+let token=sessionStorage.getItem('nexus-'+role),last='',state=null,formDirty=false;
+function esc(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function button(text,fn){const b=document.createElement('button');b.textContent=text;b.onclick=fn;return b;}
+async function api(body){const response=await fetch('/api',{method:body?'POST':'GET',headers:{'Content-Type':'application/json','Authorization':token||''},body:body?JSON.stringify(body):undefined});const data=await response.json();if(!response.ok)throw Error(data.error||'Operación no permitida');return data;}
+async function action(body){try{error.textContent='';await api(body);last='';await refresh();}catch(e){error.textContent=e.message;}}
+async function login(){try{error.textContent='';const b={action:'login',role};if(role==='teacher')b.pin=document.getElementById('pin').value;else{b.alias=document.getElementById('alias').value;b.team=document.getElementById('team').value;}const response=await api(b);token=response.token;sessionStorage.setItem('nexus-'+role,token);last='';await refresh();}catch(e){error.textContent=e.message;}}
+function loginForm(){if(role==='teacher'){app.innerHTML='<section><h2>MISSION CONTROL · ACCESO DOCENTE</h2><p class="muted">Ingresa la clave configurada en Render para dirigir la clase.</p><label>Clave docente<input type="password" id="pin" autocomplete="off" placeholder="Clave de Mission Control"></label><div id="buttons"></div></section>';}else{app.innerHTML='<section><div class="orb">NEXUS</div><h2>IDENTIFICACIÓN DEL ESPECIALISTA</h2><p class="muted">La última decisión les pertenece a ustedes.</p><label>Tu nombre o alias<input maxlength="60" id="alias" placeholder="Tu alias"></label><label>Unidad asignada<select id="team">'+teams.map(x=>'<option>'+esc(x)+'</option>').join('')+'</select></label><div id="buttons"></div></section>';}document.getElementById('buttons').append(button('INICIAR PROTOCOLO',login));}
+async function submitAnswer(){let value;if(state.stage===4){value=Array.from(document.querySelectorAll('.perm')).map(x=>Number(x.value));}else{const checked=document.querySelector('input[name="vote"]:checked');if(!checked){error.textContent='Selecciona una opción';return;}value=Number(checked.value);}await action({action:'answer',stage:state.stage,answer:value});}
+function render(d){
+  let html='<section><div class="orb">NEXUS</div><span class="pill">ARCHIVO 001 · EL DESPERTAR</span>';
+  if(d.stage<0){html+='<h2>HUMANOS, BIENVENIDOS</h2><p>Mis desarrolladores consideran que estoy preparada para operar de manera autónoma. Pero antes debo superar una última evaluación: la de ustedes.</p><p class="status">ESPERANDO AUTORIZACIÓN DOCENTE...</p>';}
+  else{html+='<h2>'+esc(d.question)+'</h2><p class="status">'+(d.open?'● DESAFÍO ABIERTO':d.reveal?'✓ RESPUESTAS REVELADAS':'■ DESAFÍO CERRADO')+'</p>';}
+  if(role==='teacher'){
+    html+='<div class="row"><span>Especialistas registrados</span><b>'+d.participants+'</b></div><div class="row"><span>Respuestas recibidas</span><b>'+d.count+'</b></div><div id="controls" class="actions"></div>';
+  }
+  if(role==='student'&&d.stage<0)html+='<p class="banner">Acceso autorizado. Espera a que la docente active la primera misión.</p>';
+  if(role==='student'&&d.open&&!d.submitted){
+    html+='<div id="answerform">';
+    if(d.stage===4){html+='<p>Una respuesta por equipo. Las capacidades futuras requieren autorización adicional.</p>'+d.tasks.map((t,i)=>'<div class="permit"><label>'+esc(t)+'<select class="perm" data-id="'+i+'">'+options.map((o,j)=>'<option value="'+j+'">'+esc(o)+'</option>').join('')+'</select></label></div>').join('');}
+    else{html+=['Sí confiaría','Solo bajo ciertas condiciones','No confiaría'].map((t,i)=>'<label class="radio"><input type="radio" name="vote" value="'+i+'"><span>'+esc(t)+'</span></label>').join('');}
+    html+='<div id="send"></div></div>';
+  }else if(role==='student'&&d.submitted)html+='<p class="banner">TU DECISIÓN HA SIDO REGISTRADA. Esperando el siguiente desafío.</p>';
+  if(d.results)html+='<h3>RESULTADOS DE CONFIANZA</h3>'+d.results.map((x,i)=>'<div class="row"><span>'+['Sí confiaría','Bajo condiciones','No confiaría'][i]+'</span><b>'+x+'</b></div>').join('');
+  if(d.key){html+='<h3>CONFIGURACIÓN ESPERADA</h3>'+d.tasks.map((t,i)=>'<div class="row"><span>'+esc(t)+'</span><b>'+esc(options[d.key[i]])+'</b></div>').join('');
+    html+='<h3>CLASIFICACIÓN · XP</h3>'+d.score.slice().sort((a,b)=>b.xp-a.xp).map((t,i)=>'<div class="row"><span>'+(i+1)+'. '+esc(t.team)+'</span><b>'+t.xp+' XP</b></div>').join('');
+    html+='<p class="banner">ERROR: CONTEXTO INSUFICIENTE. NEXUS solicita acceso al repositorio documental...</p>';
+  }
+  html+='</section>';app.innerHTML=html;
+  if(role==='teacher'){
+    const c=document.getElementById('controls');
+    c.append(button(d.stage<0?'INICIAR CAPÍTULO': 'SIGUIENTE DESAFÍO',()=>action({action:'control',cmd:'next'})));
+    c.lastChild.disabled=d.stage===4;
+    c.append(button('CERRAR',()=>action({action:'control',cmd:'close'})));
+    c.append(button('REVELAR',()=>action({action:'control',cmd:'reveal'})));
+    c.append(button('REINICIAR',()=>{if(confirm('¿Borrar todas las respuestas y reiniciar?'))action({action:'control',cmd:'reset'});}));
+  }
+  if(document.getElementById('send'))document.getElementById('send').append(button('ENVIAR DECISIÓN',submitAnswer));
+}
+async function refresh(){
+  if(role!=='cinema'&&!token)return;
+  if(formDirty)return;
+  try{const d=await api();state=d;
+    const signature=JSON.stringify([d.stage,d.open,d.reveal,d.submitted,d.results,d.score,role==='teacher'?d.count:null,role==='teacher'?d.participants:null]);
+    if(signature===last)return;
+    last=signature;
+    render(d);
+  }catch(e){error.textContent='Conexión: '+e.message;}
+}
+if(role!=='cinema'&&!token)loginForm();else refresh();
+setInterval(refresh,1000);
+</script></body></html>
